@@ -1,15 +1,15 @@
 #!/usr/bin/python
-# Course export parsing script to create 'modulestore' file by scraping course export data 
+# Course export parsing script to create 'modulestore' file by scraping course export data
 # from edX; to be used to sync with Stanford's data scrubbing scripts if you don't want to
 # spin up your own OpenEdX instance just to get modulestore information
 #
 # Developed in Python 2.7. Please report any bugs to the author.
-# 
+#
 # Github repo: https://github.com/kk415kk/datascrub
 # README: https://github.com/kk415kk/datascrub/README.md
 # NOTES: If the script does not have run permissions, please run "chmod +x parse" to give it
 # executable permissions.
-# 
+#
 # Author: Kevin Kao
 # Email: kkao@berkeley.edu
 # Creation Date: 4/26/14
@@ -136,7 +136,7 @@ def main():
 		course_exports = clean(arglist[0])
 		root_folder = os.path.join(os.getcwd(), course_exports)
 		if not os.path.exists(root_folder):
-			print "Invalid file path: " + root_folder	
+			print "Invalid file path: " + root_folder
 			exit(1)
 
 		# extract tarfiles to folder_of_parser/EXTRACT_TO
@@ -188,7 +188,7 @@ def main():
 			##		{ sequentialHash : [seqDisplayName, [list of verticals/modules], ("chapter", chapterHash)] }
 			## 	"vertical" stores a dictionary in this format:
 			##		{ verticalHash : [verDisplayName, [list of modules], ("sequential", seqHash)] }
-			##	
+			##
 			## For modules, there are several kinds, including problems, videos, html, etc...
 			## To generalize for the future, these are not explicitly added into the dictionary.
 			## They will be added dynamically as the parser discovers new module types in the export.
@@ -204,7 +204,7 @@ def main():
 			root_folder = os.path.dirname(os.path.join(os.getcwd(), EXTRACT_TO, course_export))
 
 			if not os.path.exists(root_folder):
-				print "Invalid file path: " + root_folder	
+				print "Invalid file path: " + root_folder
 				exit(1)
 
 			# parse for course information first
@@ -249,7 +249,7 @@ def main():
 					if "start" in root.attrib:
 						entry_dict["metadata"]["start"] = root.attrib["start"]
 					entry_dict["metadata"]["xml_attributes"]["filename"].append("chapter/" + chapter_file)
-					
+
 					# update content_linker
 					content_linker["chapter"][chapter] = [ display_name, []]
 
@@ -292,12 +292,12 @@ def main():
 			entry_dict = { "_id" : { "tag" : tag, "org" : org, "course" : course, "category" : "course", \
 						"name" : files[0].replace(".xml", ""), "revision" : None }, "definition" : { \
 						"children" : [], "data": data_dict }, "metadata" : { "start" : "", "xml_attributes" : \
-						{ "filename" : [] }, "display_name" : "", "advanced_modules" : [], "tabs" : []} } 
+						{ "filename" : [] }, "display_name" : "", "advanced_modules" : [], "tabs" : []} }
 			if "start" in root.attrib:
 				entry_dict["metadata"]["start"] = root.attrib["start"]
 			entry_dict["metadata"]["xml_attributes"]["filename"].append("course/" + files[0])
 			entry_dict["metadata"]["xml_attributes"]["display_name"] =  root.attrib["display_name"]
-			
+
 			# store chapters and wiki slug into entry
 			for chapter in root:
 				if chapter.tag == "chapter":
@@ -364,13 +364,13 @@ def main():
 					for child_elem in root:
 						child = tag + "://" + org + "/" + course + "/" + child_elem.tag + "/" + child_elem.attrib["url_name"]
 						entry_dict["definition"]["children"].append(child)
-						
+
 						# update content_linker
 						content_linker["sequential"][sequential][1].append((child_elem.tag, child_elem.attrib["url_name"]))
 						if not child_elem.tag in content_linker:
 							content_linker[child_elem.tag] = {}
 							# add to list of module_types if not there
-							if not child_elem.tag in module_list: 
+							if not child_elem.tag in module_list:
 								module_list.append(child_elem.tag)
 						content_linker[child_elem.tag][child_elem.attrib["url_name"]] = [ None, [], ("sequential", sequential)]
 					output.append(entry_dict)
@@ -379,7 +379,7 @@ def main():
 				log(logfile, err)
 				sys.stdout.write("failure... :(\n")
 
-			
+
 			# parse 'vertical' folder of course export
 			# verticals have no file name (???)
 			try:
@@ -411,16 +411,16 @@ def main():
 
 						child = tag + "://" + org + "/" + course + "/" + module_type + "/" + module_name
 						entry_dict["definition"]["children"].append(child)
-						
+
 						# update content_linker
 						# content_linker["vertical"][vertical][0] = display_name
 						content_linker["vertical"][vertical][1].append((module_type, module_name))
 						if not module_type in content_linker:
 							content_linker[module_type] = {}
-						content_linker[module_type][module_name] = [ None, [], ("vertical", vertical)] 
-						
+						content_linker[module_type][module_name] = [ None, [], ("vertical", vertical)]
+
 						# add to list of module_types if not there
-						if not module_type in module_list: 
+						if not module_type in module_list:
 							module_list.append(module_type)
 					output.append(entry_dict)
 				sys.stdout.write("success!\n")
@@ -436,11 +436,11 @@ def main():
 					try:
 						module_type = str(module)
 						files = os.listdir(os.path.join(os.getcwd(), EXTRACT_TO, course_export, module_type))
-						
+
 						for module_file in files:
 							if module_file.endswith('.xml'):
 								name = module_file.replace(".xml", "")
-								
+
 								data = ""
 								tree = ET.parse(os.path.join(os.getcwd(), EXTRACT_TO, course_export, module_type, module_file))
 								root = tree.getroot()
@@ -462,12 +462,12 @@ def main():
 								# display_name of a module is the display_name of its vertical
 								module_parent = content_linker[module_type][name][2][0]
 								module_parent_hash = content_linker[module_type][name][2][1]
-								
+
 								if "display_name" not in root.attrib:
 									display_name = content_linker[module_parent][module_parent_hash][0]
-								else: 
+								else:
 									display_name = root.attrib["display_name"]
-								
+
 								content_linker[module_type][name][0] = display_name
 
 								f = open(os.path.join(os.getcwd(), EXTRACT_TO, course_export, module_type, module_file), "r")
@@ -475,12 +475,12 @@ def main():
 					                    "name" : name, "revision" : None }, "definition" : { \
 					                    "data": data }, "metadata" : { "xml_attributes" : \
 					                    { "filename" : [ module_type + "/" + module_file ] }, "display_name" : display_name } }
-					            
+
 								for attribute in root.attrib:
 									entry_dict["metadata"]["xml_attributes"][attribute] = root.attrib[attribute]
-								
+
 								output.append(entry_dict)
-						sys.stdout.write("success!\n")					
+						sys.stdout.write("success!\n")
 					except OSError:
 						print "No '" + module_type + "' folder in this course..."
 						pass
@@ -488,12 +488,12 @@ def main():
 				log(logfile, err)
 				sys.stdout.write("failure... :(\n")
 
-			if PRETTIFY_JSON:
-				json.dump( output, outfile, sort_keys=True, indent=4, separators=(',', ': ') )
-			else:
-				json.dump( output, outfile, sort_keys=True )
+	if PRETTIFY_JSON:
+		json.dump( output, outfile, sort_keys=True, indent=4, separators=(',', ': ') )
+	else:
+		json.dump( output, outfile, sort_keys=True )
 
-	# remove unzipped course export folder from disk to clear space	
+	# remove unzipped course export folder from disk to clear space
 	sys.stdout.write("Clearing space from extracted course exports...\t")
 	shutil.rmtree(os.path.join(os.getcwd(), EXTRACT_TO))
 	print "success!\n"
